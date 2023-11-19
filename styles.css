@@ -1,0 +1,11 @@
+/* Add your CSS styles here */
+.timeline-container {
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  
+  svg {
+    display: block;
+    margin: 0 auto;
+  }
+  
