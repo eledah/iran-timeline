@@ -1,4 +1,8 @@
 /* Add your CSS styles here */
+html, body {
+    height: 100%;
+}
+
 .timeline-container {
     margin-top: 20px;
     overflow-x: auto;
