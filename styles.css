@@ -1,15 +1,13 @@
-/* Add your CSS styles here */
-html, body {
-    height: 100%;
-}
+/* styles.css */
 
+body {
+    font-family: Arial, sans-serif;
+}
+  
 .timeline-container {
-    margin-top: 20px;
-    overflow-x: auto;
-  }
+}
   
-  svg {
-    display: block;
-    margin: 0 auto;
-  }
-  
+rect {
+    border-radius: 30px;
+    fill: #039BE5; /* Set background color for rectangles */
+}

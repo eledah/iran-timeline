@@ -1,5 +1,9 @@
 // Set the axis length as a constant
 const AXIS_LENGTH = 20000;
+const COLLISION_OFFSET = 35; // Constant for adjusting the position in case of collision
+
+// List to store the coordinates of existing rectangles
+const existingRectangles = [];
 
 // Function to read CSV file and create the horizontal timeline
 function createHorizontalTimeline() {
@@ -16,10 +20,10 @@ function createHorizontalTimeline() {
       // Create HTML content for the timeline
       let htmlContent = '<div class="scrollable-container">'; // Add a div for scrollability
       htmlContent += '<div class="timeline-container">'; // Set the main div
-      htmlContent += `<svg width="${AXIS_LENGTH}px" height="100%">`; // Use the constant for SVG width and set height to 100%
+      htmlContent += `<svg width="${calculateMaxWidth()}px" height="${calculateMaxHeight()}px">`; // Set dynamic width and height
 
       // Create horizontal axis
-      htmlContent += `<line x1="0" y1="50" x2="${AXIS_LENGTH}px" y2="50" stroke="black"/>`; // Use the constant for x2
+      htmlContent += `<line x1="0" y1="50" x2="${calculateMaxWidth()}px" y2="50" stroke="black"/>`; // Set dynamic x2
 
       // Iterate through the data and draw rectangles for each person
       data.forEach((person, index) => {
@@ -28,19 +32,22 @@ function createHorizontalTimeline() {
 
         if (!isNaN(birthYear)) {
           // Calculate rectangle position and dimensions
-          const rectX = (birthYear / 2020) * AXIS_LENGTH; // Scale the x-coordinate based on the axis length
-          let rectWidth = isNaN(deathYear) ? AXIS_LENGTH - rectX : (deathYear / 2020) * AXIS_LENGTH - rectX; // Scale the width
+          const rectX = (birthYear + 2000) * (AXIS_LENGTH / 4000); // Adjust for birth years starting from -2000
+          let rectWidth = isNaN(deathYear) ? 20000 - rectX : (deathYear + 2000) * (AXIS_LENGTH / 4000) - rectX; // Adjust for birth years starting from -2000
 
           // Adjust the height to prevent collision
-          const rectY = findAvailableY(rectX, rectWidth, data.slice(0, index));
+          const rectY = findAvailableY(rectX, rectWidth, person.name);
 
           // Draw rectangle
-          htmlContent += `<rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="40" fill="blue" stroke="black"/>`;
+          htmlContent += `<rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="30"  stroke="gray"/>`;
 
           // Add text in the middle of the rectangle
           const textX = rectX + rectWidth / 2;
           const textY = rectY + 20; // Centered on the rectangle
           htmlContent += `<text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text>`;
+
+          // Add the rectangle coordinates to the list
+          existingRectangles.push({ x1: rectX, y1: rectY, x2: rectX + rectWidth, y2: rectY + 40 });
         }
       });
 
@@ -50,42 +57,62 @@ function createHorizontalTimeline() {
 
       // Append the HTML content to the body or any other container element
       document.body.innerHTML += htmlContent;
+
+      // Set the <svg> height to the result of calculateMaxHeight()
+      document.querySelector('svg').setAttribute('height', `${calculateMaxHeight()}px`);
+      document.querySelector('svg').setAttribute('width', `${calculateMaxWidth()}px`);
+      document.querySelector('line').setAttribute('x2', `${calculateMaxWidth()}px`);
+      
     })
     .catch(error => {
       console.error('Error fetching CSV file:', error);
     });
 }
 
-// Function to find an available y-coordinate to prevent overlap with previous people
-function findAvailableY(rectX, rectWidth, previousPeople) {
-    const rectEnd = rectX + rectWidth;
+// Function to find an available y-coordinate to prevent overlap with previous rectangles
+function findAvailableY(rectX, rectWidth, name) {
     let rectY = 30;
     let collisions = 0;
+    let collisionYs = [];
+    const minY = 30;
   
-    // Iterate through the array of previous people
-    for (const person of previousPeople) {
-      const prevBirthYear = person.birth ? parseInt(person.birth) : null;
-      const prevDeathYear = person.death ? parseInt(person.death) : 2020;
+    // Initialize the collisionYs array
+    for (let y = rectY; y < calculateMaxHeight() + 400; y += COLLISION_OFFSET) {
+      collisionYs.push(y);
+    }
   
-      if (!isNaN(prevBirthYear)) {
-        const prevRectX = (prevBirthYear / 2020) * AXIS_LENGTH;
-        const prevRectWidth = isNaN(prevDeathYear) ? AXIS_LENGTH - prevRectX : (prevDeathYear / 2020) * AXIS_LENGTH - prevRectX;
-  
-        // Check for overlap with the previous person's rectangle
-        if (!(rectEnd <= prevRectX || rectX >= prevRectX + prevRectWidth)) {
-          // If there is overlap, increment the collisions count and move the rectangle down
-          collisions++;
-          rectY += 50 * collisions; // Move the rectangle vertically based on the number of collisions
-        }
+    // Iterate through the list of existing rectangles
+    for (const existingRect of existingRectangles) {
+      // Check for overlap with the existing rectangle
+      if (!(rectX + rectWidth <= existingRect.x1 || rectX >= existingRect.x2)) {
+        // If there is overlap, remove the corresponding y-coordinate from the array
+        const index = Math.floor((existingRect.y1 - minY) / COLLISION_OFFSET);
+        collisionYs[index] = undefined;
+        collisions += 1;
       }
     }
+  
+    // Find the minimum remaining y-coordinate in the array
+    const minRemainingY = collisionYs.find(y => y !== undefined) || minY;
+  
+    // Set rectY to the minimum remaining y-coordinate
+    rectY = minRemainingY;
+  
+    console.log(name, collisions, rectY);
   
     return rectY;
   }
   
-  
-  
-  
+
+// Function to calculate the maximum height inside existing rectangles
+function calculateMaxHeight() {
+  return Math.max(...existingRectangles.map(rectangle => rectangle.y2)) + COLLISION_OFFSET;
+}
+
+// Function to calculate the maximum width for the SVG element
+function calculateMaxWidth() {
+  return Math.max(...existingRectangles.map(rectangle => rectangle.x2)) + COLLISION_OFFSET;
+}
 
 // Function to parse CSV data
 function parseCSV(csvData) {
