@@ -1,5 +1,7 @@
 # 🇮🇷 
 
-Timeline of important Iranian figures.
+Timeline of important Iranian figures. 
 
-Source: [pantheon.world]([url](https://pantheon.world/data/datasets)https://pantheon.world/data/datasets)
+## [Live Version](https://eledah.github.io/iran-timeline)
+
+Source: [pantheon.world](https://pantheon.world/data/datasets)
