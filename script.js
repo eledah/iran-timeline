@@ -5,6 +5,42 @@ const COLLISION_OFFSET = 35; // Constant for adjusting the position in case of c
 // List to store the coordinates of existing rectangles
 const existingRectangles = [];
 
+// Color palette for different types
+const colorPalette = [
+  [173, 216, 230],
+  [0, 191, 255],
+  [30, 144, 255],
+  [0, 0, 255],
+  [0, 0, 139],
+  [72, 61, 139],
+  [123, 104, 238],
+  [138, 43, 226],
+  [128, 0, 128],
+  [218, 112, 214],
+  [255, 0, 255],
+  [255, 20, 147],
+  [176, 48, 96],
+  [220, 20, 60],
+  [240, 128, 128],
+  [255, 69, 0],
+  [255, 165, 0],
+  [244, 164, 96],
+  [240, 230, 140],
+  [128, 128, 0],
+  [139, 69, 19],
+  [255, 255, 0],
+  [154, 205, 50],
+  [124, 252, 0],
+  [144, 238, 144],
+  [143, 188, 143],
+  [34, 139, 34],
+  [0, 255, 127],
+  [0, 255, 255],
+  [0, 139, 139],
+  [128, 128, 128],
+  [0, 0, 0],
+];
+
 // Function to read CSV file and create the horizontal timeline
 function createHorizontalTimeline() {
   // Set the CSV file path
@@ -38,13 +74,12 @@ function createHorizontalTimeline() {
           // Adjust the height to prevent collision
           const rectY = findAvailableY(rectX, rectWidth, person.name);
 
-          // Draw rectangle
-          htmlContent += `<rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="30"  stroke="gray"/>`;
-
-          // Add text in the middle of the rectangle
+          // Add text in the middle of the rectangle as a hyperlink
+          const link = person.link ? person.link : '#';
           const textX = rectX + rectWidth / 2;
           const textY = rectY + 20; // Centered on the rectangle
-          htmlContent += `<text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text>`;
+          htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="30" fill="${getColor(person.type)}" stroke="gray"/></a>`;
+          htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text></a>`;
 
           // Add the rectangle coordinates to the list
           existingRectangles.push({ x1: rectX, y1: rectY, x2: rectX + rectWidth, y2: rectY + 40 });
@@ -62,7 +97,6 @@ function createHorizontalTimeline() {
       document.querySelector('svg').setAttribute('height', `${calculateMaxHeight()}px`);
       document.querySelector('svg').setAttribute('width', `${calculateMaxWidth()}px`);
       document.querySelector('line').setAttribute('x2', `${calculateMaxWidth()}px`);
-      
     })
     .catch(error => {
       console.error('Error fetching CSV file:', error);
@@ -71,38 +105,48 @@ function createHorizontalTimeline() {
 
 // Function to find an available y-coordinate to prevent overlap with previous rectangles
 function findAvailableY(rectX, rectWidth, name) {
-    let rectY = 30;
-    let collisions = 0;
-    let collisionYs = [];
-    const minY = 30;
-  
-    // Initialize the collisionYs array
-    for (let y = rectY; y < calculateMaxHeight() + 400; y += COLLISION_OFFSET) {
-      collisionYs.push(y);
-    }
-  
-    // Iterate through the list of existing rectangles
-    for (const existingRect of existingRectangles) {
-      // Check for overlap with the existing rectangle
-      if (!(rectX + rectWidth <= existingRect.x1 || rectX >= existingRect.x2)) {
-        // If there is overlap, remove the corresponding y-coordinate from the array
-        const index = Math.floor((existingRect.y1 - minY) / COLLISION_OFFSET);
-        collisionYs[index] = undefined;
-        collisions += 1;
-      }
-    }
-  
-    // Find the minimum remaining y-coordinate in the array
-    const minRemainingY = collisionYs.find(y => y !== undefined) || minY;
-  
-    // Set rectY to the minimum remaining y-coordinate
-    rectY = minRemainingY;
-  
-    console.log(name, collisions, rectY);
-  
-    return rectY;
+  let rectY = 30;
+  let collisions = 0;
+  let collisionYs = [];
+  const minY = 30;
+
+  // Initialize the collisionYs array
+  for (let y = rectY; y < calculateMaxHeight() + 400; y += COLLISION_OFFSET) {
+    collisionYs.push(y);
   }
-  
+
+  // Iterate through the list of existing rectangles
+  for (const existingRect of existingRectangles) {
+    // Check for overlap with the existing rectangle
+    if (!(rectX + rectWidth <= existingRect.x1 || rectX >= existingRect.x2)) {
+      // If there is overlap, remove the corresponding y-coordinate from the array
+      const index = Math.floor((existingRect.y1 - minY) / COLLISION_OFFSET);
+      collisionYs[index] = undefined;
+      collisions += 1;
+    }
+  }
+
+  // Find the minimum remaining y-coordinate in the array
+  const minRemainingY = collisionYs.find(y => y !== undefined) || minY;
+
+  // Set rectY to the minimum remaining y-coordinate
+  rectY = minRemainingY;
+
+  console.log(name, collisions, rectY);
+
+  return rectY;
+}
+
+// Function to get color based on the person's type
+function getColor(type) {
+  const typeIndex = typeList.indexOf(type);
+  if (typeIndex !== -1 && typeIndex < colorPalette.length) {
+    const [r, g, b] = colorPalette[typeIndex];
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  // Default color if type is not found or palette is exhausted
+  return 'gray';
+}
 
 // Function to calculate the maximum height inside existing rectangles
 function calculateMaxHeight() {
