@@ -1,45 +1,44 @@
 // Set the axis length as a constant
 const AXIS_LENGTH = 20000;
-const COLLISION_OFFSET = 35; // Constant for adjusting the position in case of collision
+const COLLISION_OFFSET = 25; // Constant for adjusting the position in case of collision
 
 // List to store the coordinates of existing rectangles
 const existingRectangles = [];
 
-// Color palette for different types
-const colorPalette = [
-  [173, 216, 230],
-  [0, 191, 255],
-  [30, 144, 255],
-  [0, 0, 255],
-  [0, 0, 139],
-  [72, 61, 139],
-  [123, 104, 238],
-  [138, 43, 226],
-  [128, 0, 128],
-  [218, 112, 214],
-  [255, 0, 255],
-  [255, 20, 147],
-  [176, 48, 96],
-  [220, 20, 60],
-  [240, 128, 128],
-  [255, 69, 0],
-  [255, 165, 0],
-  [244, 164, 96],
-  [240, 230, 140],
-  [128, 128, 0],
-  [139, 69, 19],
-  [255, 255, 0],
-  [154, 205, 50],
-  [124, 252, 0],
-  [144, 238, 144],
-  [143, 188, 143],
-  [34, 139, 34],
-  [0, 255, 127],
-  [0, 255, 255],
-  [0, 139, 139],
-  [128, 128, 128],
-  [0, 0, 0],
-];
+const typeColorMap = {
+  'PHILOSOPHER': '#EF4444',
+  'RELIGIOUS FIGURE': '#F97316',
+  'MATHEMATICIAN': '#F59E0B',
+  'POLITICIAN': '#3B82F6',
+  'WRITER': '#22C55E',
+  'CHEMIST': '#14532D',
+  'PHYSICIAN': '#064E3B',
+  'ASTRONOMER': '#134E4A',
+  'COMPANION': '#164E63',
+  'MILITARY PERSONNEL': '#0C4A6E',
+  'FILM DIRECTOR': '#1E3A8A',
+  'SOCIAL ACTIVIST': '#312E81',
+  'EXPLORER': '#4C1D95',
+  'LINGUIST': '#701A75',
+  'CELEBRITY': '#831843',
+  'HISTORIAN': '#881337',
+  'LAWYER': '#B91C1C',
+  'PAINTER': '#C2410C',
+  'ACTOR': '#B45309',
+  'NOBLEMAN': '#A16207',
+  'SINGER': '#B45309',
+  'SOCCER PLAYER': '#A16207',
+  'WRESTLER': '#4D7C0F',
+  'TENNIS PLAYER': '#15803D',
+  'COMIC ARTIST': '#047857',
+  'ENGINEER': '#0F766E',
+  'BIOLOGIST': '#0E7490',
+  'PHOTOGRAPHER': '#0369A1',
+  'PHYSICIST': '#1D4ED8',
+  'PORNOGRAPHIC ACTOR': '#4338CA',
+  'MUSICIAN': '#6D28D9',
+  'REFEREE': '#7E22CE',
+};
 
 // Function to read CSV file and create the horizontal timeline
 function createHorizontalTimeline() {
@@ -57,6 +56,14 @@ function createHorizontalTimeline() {
       let htmlContent = '<div class="scrollable-container">'; // Add a div for scrollability
       htmlContent += '<div class="timeline-container">'; // Set the main div
       htmlContent += `<svg width="${calculateMaxWidth()}px" height="${calculateMaxHeight()}px">`; // Set dynamic width and height
+
+      // Add numbers above the axis
+      for (let year = -2000; year <= 2000; year += 50) {
+        const yearX = (year + 2000) * (AXIS_LENGTH / 4000);
+        const yearTextX = yearX - 5; // Adjust for better positioning
+        const yearTextY = 40; // Adjust for better positioning
+        htmlContent += `<text x="${yearTextX}" y="${yearTextY}" text-anchor="middle" alignment-baseline="middle" fill="black">${year}</text>`;
+      }
 
       // Create horizontal axis
       htmlContent += `<line x1="0" y1="50" x2="${calculateMaxWidth()}px" y2="50" stroke="black"/>`; // Set dynamic x2
@@ -77,12 +84,24 @@ function createHorizontalTimeline() {
           // Add text in the middle of the rectangle as a hyperlink
           const link = person.link ? person.link : '#';
           const textX = rectX + rectWidth / 2;
-          const textY = rectY + 20; // Centered on the rectangle
-          htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="30" fill="${getColor(person.type)}" stroke="gray"/></a>`;
-          htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text></a>`;
+          const textY = rectY + 15; // Centered on the rectangle
+          const hpi = person.hpi ? person.hpi : 'N/A'; // Assuming HPI is a property in your CSV data
+
+          htmlContent += `<a href="${link}" target="_blank">
+                      <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="20" fill="${getColor(person.type)}" stroke="gray"
+                        title="Name: ${person.name}\nOccupation: ${person.type}\nHPI: ${hpi}">
+                      </rect>
+                    </a>`;
+          htmlContent += `<a href="${link}" target="_blank">
+                      <text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text>
+                    </a>`;
+
+
+          // htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="20" fill="${getColor(person.type)}" stroke="gray"/></a>`;
+          // htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text></a>`;
 
           // Add the rectangle coordinates to the list
-          existingRectangles.push({ x1: rectX, y1: rectY, x2: rectX + rectWidth, y2: rectY + 40 });
+          existingRectangles.push({ x1: rectX, y1: rectY, x2: rectX + rectWidth, y2: rectY + 20 });
         }
       });
 
@@ -105,10 +124,10 @@ function createHorizontalTimeline() {
 
 // Function to find an available y-coordinate to prevent overlap with previous rectangles
 function findAvailableY(rectX, rectWidth, name) {
-  let rectY = 30;
+  let rectY = 60;
   let collisions = 0;
   let collisionYs = [];
-  const minY = 30;
+  const minY = 60;
 
   // Initialize the collisionYs array
   for (let y = rectY; y < calculateMaxHeight() + 400; y += COLLISION_OFFSET) {
@@ -139,13 +158,7 @@ function findAvailableY(rectX, rectWidth, name) {
 
 // Function to get color based on the person's type
 function getColor(type) {
-  const typeIndex = typeList.indexOf(type);
-  if (typeIndex !== -1 && typeIndex < colorPalette.length) {
-    const [r, g, b] = colorPalette[typeIndex];
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-  // Default color if type is not found or palette is exhausted
-  return 'gray';
+  return typeColorMap[type];
 }
 
 // Function to calculate the maximum height inside existing rectangles
