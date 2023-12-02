@@ -1,6 +1,7 @@
 // Set the axis length as a constant
 const AXIS_LENGTH = 20000;
 const COLLISION_OFFSET = 25; // Constant for adjusting the position in case of collision
+const RECT_HEIGHT = 20
 
 // List to store the coordinates of existing rectangles
 const existingRectangles = [];
@@ -84,17 +85,11 @@ function createHorizontalTimeline() {
           // Add text in the middle of the rectangle as a hyperlink
           const link = person.link ? person.link : '#';
           const textX = rectX + rectWidth / 2;
-          const textY = rectY + 15; // Centered on the rectangle
+          const textY = rectY + (RECT_HEIGHT) / 2 + 5; // Centered on the rectangle
           const hpi = person.hpi ? person.hpi : 'N/A'; // Assuming HPI is a property in your CSV data
 
-          htmlContent += `<a href="${link}" target="_blank">
-                      <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="20" fill="${getColor(person.type)}" stroke="gray"
-                        title="Name: ${person.name}\nOccupation: ${person.type}\nHPI: ${hpi}">
-                      </rect>
-                    </a>`;
-          htmlContent += `<a href="${link}" target="_blank">
-                      <text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text>
-                    </a>`;
+          htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${RECT_HEIGHT}" fill="${getColor(person.type)}" rx="10" ry="10""</rect></a>`;
+          htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text></a>`;
 
 
           // htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="20" fill="${getColor(person.type)}" stroke="gray"/></a>`;

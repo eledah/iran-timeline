@@ -14,6 +14,10 @@ html {
 .timeline-container {
 }
   
-rect {
-    border-radius: 30px;
+a {
+    transition: box-shadow .3s;
+}
+
+a:hover {
+    box-shadow: 0 0 11px rgba(33,33,33,.2); 
 }
