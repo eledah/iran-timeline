@@ -4,7 +4,7 @@ const COLLISION_OFFSET = 25; // Constant for adjusting the position in case of c
 const RECT_HEIGHT = 20
 
 // List to store the coordinates of existing rectangles
-const existingRectangles = [];
+let existingRectangles = [];
 
 const typeColorMap = {
   'PHILOSOPHER': '#EF4444',
@@ -41,8 +41,24 @@ const typeColorMap = {
   'REFEREE': '#7E22CE',
 };
 
+// Object to store the state of checkboxes
+const checkboxStates = {};
+Object.keys(typeColorMap).forEach(type => {
+  checkboxStates[type] = true; // Set all checkboxes initially checked
+});
+
 // Function to read CSV file and create the horizontal timeline
 function createHorizontalTimeline() {
+  // Apply checkbox states to floating div checkboxes
+  Object.keys(checkboxStates).forEach(type => {
+    const checkbox = document.querySelector(`input[data-type="${type}"]`);
+    if (checkbox) {
+      checkbox.checked = checkboxStates[type];
+    }
+  });
+
+  console.log("Creating Timeline...")
+  existingRectangles = [];
   // Set the CSV file path
   const csvFilePath = 'https://raw.githubusercontent.com/eledah/iran-timeline/main/iran.csv';
 
@@ -72,7 +88,7 @@ function createHorizontalTimeline() {
       // Iterate through the data and draw rectangles for each person
       data.forEach((person, index) => {
         const typeCheckbox = document.querySelector(`input[data-type="${person.type}"]`);
-        if (!typeCheckbox || !typeCheckbox.checked) {
+        if (!typeCheckbox.checked) {
           // Skip this person if the checkbox is not found or not checked
           return;
         }
@@ -130,6 +146,13 @@ function createHorizontalTimeline() {
     .catch(error => {
       console.error('Error fetching CSV file:', error);
     });
+
+    Object.keys(checkboxStates).forEach(type => {
+      const checkbox = document.querySelector(`input[data-type="${type}"]`);
+      if (checkbox) {
+        checkbox.checked = checkboxStates[type];
+      }
+    });
 }
 
 // Function to find an available y-coordinate to prevent overlap with previous rectangles
@@ -161,7 +184,7 @@ function findAvailableY(rectX, rectWidth, name) {
   // Set rectY to the minimum remaining y-coordinate
   rectY = minRemainingY;
 
-  console.log(name, collisions, rectY);
+  // console.log(name, collisions, rectY);
 
   return rectY;
 }
@@ -200,70 +223,87 @@ function parseCSV(csvData) {
   });
 }
 
-// Call the function to create the horizontal timeline
-createHorizontalTimeline();
+
+// Function to create the floating div with keys and checkboxes
+function addFloatingDivWithCheckboxes() {
+  const floatingDiv = document.createElement('div');
+  floatingDiv.style.position = 'fixed';
+  floatingDiv.style.bottom = '0';
+  floatingDiv.style.left = '0';
+  floatingDiv.style.width = '100%';
+  floatingDiv.style.backgroundColor = '#f3f3f3'; // Set background color to light gray
+  floatingDiv.style.color = 'black'; // Set text color to black
+  floatingDiv.style.textAlign = 'center';
+  floatingDiv.style.padding = '10px 0';
+  floatingDiv.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.1)'; // Add box shadow
+
+  // Iterate over typeColorMap keys
+  Object.keys(typeColorMap).forEach((key, index, array) => {
+    let checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = checkboxStates[key]; // Set checked attribute based on checkboxStates
+    checkbox.setAttribute('data-type', key); // Set data-type attribute to key
+    checkbox.id = key
+
+    const label = document.createElement('label');
+    label.textContent = key;
+
+    // Set text color to match the color from the rectangles of that type
+    label.style.color = typeColorMap[key];
+
+    // Append checkbox and label to the floating div
+    floatingDiv.appendChild(checkbox);
+    floatingDiv.appendChild(label);
+
+    // Add "|" character if it's not the last item
+    if (index < array.length - 1) {
+      const separator = document.createElement('span');
+      separator.textContent = ' | ';
+      floatingDiv.appendChild(separator);
+    }
+  });
+
+  // Append the floating div to the body
+  document.body.appendChild(floatingDiv);
+}
 
 // Wrap your code inside a DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function() {
-
-  // Your existing code goes here
-
-  // Function to create the floating div with keys and checkboxes
-  function addFloatingDivWithCheckboxes() {
-      const floatingDiv = document.createElement('div');
-      floatingDiv.style.position = 'fixed';
-      floatingDiv.style.bottom = '0';
-      floatingDiv.style.left = '0';
-      floatingDiv.style.width = '100%';
-      floatingDiv.style.backgroundColor = '#f3f3f3'; // Set background color to light gray
-      floatingDiv.style.color = 'black'; // Set text color to black
-      floatingDiv.style.textAlign = 'center';
-      floatingDiv.style.padding = '10px 0';
-      floatingDiv.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.1)'; // Add box shadow
-
-      // Iterate over typeColorMap keys
-      Object.keys(typeColorMap).forEach((key, index, array) => {
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.checked = true; // Set checked attribute to true
-          checkbox.setAttribute('data-type', key); // Set data-type attribute to key
-          checkbox.addEventListener('change', handleCheckboxChange); // Add event listener for checkbox change
-
-          const label = document.createElement('label');
-          label.textContent = key;
-
-          // Set text color to match the color from the rectangles of that type
-          label.style.color = typeColorMap[key];
-
-          // Append checkbox and label to the floating div
-          floatingDiv.appendChild(checkbox);
-          floatingDiv.appendChild(label);
-
-          // Add "|" character if it's not the last item
-          if (index < array.length - 1) {
-              const separator = document.createElement('span');
-              separator.textContent = ' | ';
-              floatingDiv.appendChild(separator);
-          }
-      });
-
-      // Append the floating div to the body
-      document.body.appendChild(floatingDiv);
-  }
-
-  // Function to handle checkbox change
-  function handleCheckboxChange(event) {
-      const type = event.target.getAttribute('data-type');
-      const isChecked = event.target.checked;
-
-      document.querySelectorAll(`rect[data-type="${type}"]`).forEach(rect => {
-          rect.style.display = isChecked ? '' : 'none';
-      });
-  }
-
   // Call the function to add the floating div with checkboxes
   addFloatingDivWithCheckboxes();
 
+  
+
+  // Call the function to create the horizontal timeline
+  createHorizontalTimeline();
+  
 });
 
 
+// Function to handle checkbox change
+function handleCheckboxChange(event) {
+  const type = event.target.getAttribute('data-type');
+  const id = event.target.getAttribute('id');
+  const isChecked = event.target.checked;
+
+  // Remove the existing timeline container
+  const existingTimelineContainer = document.querySelector('.scrollable-container');
+  if (existingTimelineContainer) {
+    existingTimelineContainer.remove();
+  }
+
+  // Update checkbox state in the object
+  checkboxStates[type] = !isChecked;
+  document.getElementById(id).checked = !isChecked;
+
+  // Redraw the timeline
+  createHorizontalTimeline();
+
+}
+
+// Add event listener for checkbox changes
+document.addEventListener('change', function(event) {
+  if (event.target.matches('input[type="checkbox"]')) {
+    handleCheckboxChange(event);
+  }
+});
