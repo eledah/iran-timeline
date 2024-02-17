@@ -71,6 +71,11 @@ function createHorizontalTimeline() {
 
       // Iterate through the data and draw rectangles for each person
       data.forEach((person, index) => {
+        const typeCheckbox = document.querySelector(`input[data-type="${person.type}"]`);
+        if (!typeCheckbox || !typeCheckbox.checked) {
+          // Skip this person if the checkbox is not found or not checked
+          return;
+        }
         const birthYear = person.birth ? parseInt(person.birth) : null;
         const deathYear = person.death ? parseInt(person.death) : 2020;
 
@@ -88,12 +93,22 @@ function createHorizontalTimeline() {
           const textY = rectY + (RECT_HEIGHT) / 2 + 5; // Centered on the rectangle
           const hpi = person.hpi ? person.hpi : 'N/A'; // Assuming HPI is a property in your CSV data
 
-          htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${RECT_HEIGHT}" fill="${getColor(person.type)}" rx="10" ry="10""</rect></a>`;
-          htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text></a>`;
+          // htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${RECT_HEIGHT}" fill="${getColor(person.type)}" rx="3" ry="3"></rect></a>`;
+          // htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3)">${person.name}</text></a>`;
+          
+          // Generate tooltip content
+          const tooltipContent = `${person.name}<br>Type: ${person.type}<br>Birth: ${person.birth}<br>Death: ${person.death || 'Still alive'}`;
+
+          // Add rectangle with tooltip
+          // Add rectangle with tooltip
+          htmlContent += `<a href="${link}" target="_blank" class="tooltip ${person.type}">
+            <g>
+                <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${RECT_HEIGHT}" fill="${getColor(person.type)}" rx="3" ry="3" style="padding: 5px;" title="${tooltipContent}"></rect>
+                <text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.3)">${person.name}</text>
+            </g>
+          </a>`;
 
 
-          // htmlContent += `<a href="${link}" target="_blank"><rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="20" fill="${getColor(person.type)}" stroke="gray"/></a>`;
-          // htmlContent += `<a href="${link}" target="_blank"><text x="${textX}" y="${textY}" text-anchor="middle" alignment-baseline="middle" fill="white">${person.name}</text></a>`;
 
           // Add the rectangle coordinates to the list
           existingRectangles.push({ x1: rectX, y1: rectY, x2: rectX + rectWidth, y2: rectY + 20 });
@@ -187,3 +202,68 @@ function parseCSV(csvData) {
 
 // Call the function to create the horizontal timeline
 createHorizontalTimeline();
+
+// Wrap your code inside a DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Your existing code goes here
+
+  // Function to create the floating div with keys and checkboxes
+  function addFloatingDivWithCheckboxes() {
+      const floatingDiv = document.createElement('div');
+      floatingDiv.style.position = 'fixed';
+      floatingDiv.style.bottom = '0';
+      floatingDiv.style.left = '0';
+      floatingDiv.style.width = '100%';
+      floatingDiv.style.backgroundColor = '#f3f3f3'; // Set background color to light gray
+      floatingDiv.style.color = 'black'; // Set text color to black
+      floatingDiv.style.textAlign = 'center';
+      floatingDiv.style.padding = '10px 0';
+      floatingDiv.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.1)'; // Add box shadow
+
+      // Iterate over typeColorMap keys
+      Object.keys(typeColorMap).forEach((key, index, array) => {
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = true; // Set checked attribute to true
+          checkbox.setAttribute('data-type', key); // Set data-type attribute to key
+          checkbox.addEventListener('change', handleCheckboxChange); // Add event listener for checkbox change
+
+          const label = document.createElement('label');
+          label.textContent = key;
+
+          // Set text color to match the color from the rectangles of that type
+          label.style.color = typeColorMap[key];
+
+          // Append checkbox and label to the floating div
+          floatingDiv.appendChild(checkbox);
+          floatingDiv.appendChild(label);
+
+          // Add "|" character if it's not the last item
+          if (index < array.length - 1) {
+              const separator = document.createElement('span');
+              separator.textContent = ' | ';
+              floatingDiv.appendChild(separator);
+          }
+      });
+
+      // Append the floating div to the body
+      document.body.appendChild(floatingDiv);
+  }
+
+  // Function to handle checkbox change
+  function handleCheckboxChange(event) {
+      const type = event.target.getAttribute('data-type');
+      const isChecked = event.target.checked;
+
+      document.querySelectorAll(`rect[data-type="${type}"]`).forEach(rect => {
+          rect.style.display = isChecked ? '' : 'none';
+      });
+  }
+
+  // Call the function to add the floating div with checkboxes
+  addFloatingDivWithCheckboxes();
+
+});
+
+
