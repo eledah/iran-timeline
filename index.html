@@ -2,19 +2,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-  <script src="script.js"></script>
-  <title>Iran Timeline</title>
-  <link rel="preconnect" href="https://rsms.me/">
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline of Iranian Figures</title>
+    <style>
+        body {
+            font-family: Helvetica, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        #timeline-container {
+            position: relative;
+            width: 100%;
+            height: 800px;
+            overflow-x: auto;
+            overflow-y: scroll;
+        }
+        #timeline {
+            position: relative;
+            width: 15000px;
+            min-height: 100%;
+        }
+        .person-rect {
+            position: absolute;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .person-name {
+            position: absolute;
+            color: white;
+            font-weight: 700;
+	          text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            font-size: 14px;
+            pointer-events: none;
+            text-align: center;
+            width: 100%;
+        }
+        #timebar {
+            position: sticky;
+            top: 0;
+            width: 15000px;
+            height: 30px;
+            border-bottom: 3px solid;
+            margin-bottom: 10px;
+            background-color: white;
+            z-index: 1000;
+        }
+        .year-marker {
+            position: absolute;
+            font-size: 12px;
+        }
+        #type-filters {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .type-checkbox {
+            margin-right: 10px;
+        }
+        #filter-buttons {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #filter-buttons button {
+            margin: 10px 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 700;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #filter-buttons button:hover {
+            background-color: #45a049;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            padding: 10px;
+            border: 3px solid;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1001;
+            width: 200px;
+        }
+    </style>
 </head>
 <body>
-  <div class="timeline-container">
-    
-  </div>
+    <!-- <h1>Timeline of Iranian Figures</h1> -->
+    <div id="timeline-container">
+        <div id="timebar"></div>
+        <div id="timeline"></div>
+    </div>
+    <div id="filter-buttons">
+        <button id="check-all">Check All</button>
+        <button id="uncheck-all">Uncheck All</button>
+    </div>
+    <div id="type-filters"></div>
 
+    <script>
+        const timeline = document.getElementById('timeline');
+        const timebar = document.getElementById('timebar');
+        const typeFilters = document.getElementById('type-filters');
+        const checkAllButton = document.getElementById('check-all');
+        const uncheckAllButton = document.getElementById('uncheck-all');
+
+        let data = [];
+        let minYear, maxYear, totalYears;
+        let colorMap = {};
+
+        function generateColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                const hue = (i * 360 / count) % 360;
+                colors.push(`hsl(${hue}, 70%, 60%)`);
+            }
+            return colors;
+        }
+
+        async function fetchData() {
+            const response = await fetch('https://raw.githubusercontent.com/eledah/iran-timeline/main/iran.csv');
+            const text = await response.text();
+            const rows = text.trim().split('\n').slice(1);  // Remove header row
+            data = rows.map(row => {
+                const [name, birth, death, link, hpi, type] = row.split(',');
+                return {
+                    name,
+                    birth: parseInt(birth),
+                    death: death ? parseInt(death) : null,
+                    link,
+                    hpi: parseFloat(hpi),
+                    type
+                };
+            });
+
+            minYear = Math.min(...data.map(d => d.birth));
+            maxYear = Math.max(...data.map(d => d.death || new Date().getFullYear()));
+            totalYears = maxYear - minYear;
+
+            const types = [...new Set(data.map(person => person.type))];
+            const colors = generateColors(types.length);
+            types.forEach((type, index) => {
+                colorMap[type] = colors[index];
+            });
+
+            createTimebar();
+            createTypeFilters();
+            updateTimeline();
+        }
+
+        function createTimebar() {
+            timebar.innerHTML = '';
+            const yearStep = 100;
+            for (let year = Math.floor(minYear / 100) * 100; year <= maxYear; year += yearStep) {
+                const marker = document.createElement('div');
+                marker.className = 'year-marker';
+                marker.style.left = `${((year - minYear) / totalYears) * 100}%`;
+                marker.textContent = year;
+                timebar.appendChild(marker);
+            }
+        }
+
+        function createTimeline(filteredData) {
+            timeline.innerHTML = '';
+            const occupied = [];
+
+            filteredData.forEach((person) => {
+                const startX = ((person.birth - minYear) / totalYears) * 100;
+                const endX = (((person.death || new Date().getFullYear()) - minYear) / totalYears) * 100;
+                const width = endX - startX;
+
+                let yPosition = 0;
+                while (isOverlapping(startX, endX, yPosition, occupied)) {
+                    yPosition += 40;
+                }
+                occupied.push({startX, endX, y: yPosition});
+
+                const rect = document.createElement('div');
+                rect.className = 'person-rect';
+                rect.style.left = `${startX}%`;
+                rect.style.width = `${width}%`;
+                rect.style.top = `${yPosition}px`;
+                rect.style.backgroundColor = colorMap[person.type] || "#ccc";
+                rect.onclick = () => window.open(person.link, '_blank');
+
+                const name = document.createElement('div');
+                name.className = 'person-name';
+                name.style.left = `${startX}%`;
+                name.style.width = `${width}%`;
+                name.style.top = `${yPosition + 5}px`;
+                name.textContent = person.name;
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.style.borderColor = colorMap[person.type] || "#ccc";
+                tooltip.style.color = colorMap[person.type] || "#ccc";
+                tooltip.innerHTML = `
+                    <strong>${person.name}</strong><br>
+                    Birth: ${person.birth}<br>
+                    Death: ${person.death || 'Present'}<br>
+                    Type: ${person.type}<br>
+                    HPI: ${person.hpi}
+                `;
+
+                rect.addEventListener('mouseover', () => {
+                    tooltip.style.opacity = '1';
+                    const rectRect = rect.getBoundingClientRect();
+                    const timelineRect = timeline.getBoundingClientRect();
+                    
+                    if (person.birth < 0) {
+                        tooltip.style.left = `${rectRect.right - timelineRect.left}px`;
+                    } else {
+                        tooltip.style.left = `${rectRect.left - timelineRect.left - tooltip.offsetWidth}px`;
+                    }
+                    tooltip.style.top = `${rectRect.bottom - timelineRect.top + 5}px`;
+                });
+
+                rect.addEventListener('mouseout', () => {
+                    tooltip.style.opacity = '0';
+                });
+
+                timeline.appendChild(rect);
+                timeline.appendChild(name);
+                timeline.appendChild(tooltip);
+            });
+
+            timeline.style.height = `${Math.max(...occupied.map(item => item.y)) + 70}px`;
+        }
+
+        function isOverlapping(startX, endX, y, occupied) {
+            return occupied.some(item => 
+                y === item.y && ((startX >= item.startX && startX <= item.endX) || 
+                                 (endX >= item.startX && endX <= item.endX) ||
+                                 (startX <= item.startX && endX >= item.endX))
+            );
+        }
+
+        function createTypeFilters() {
+            const types = [...new Set(data.map(person => person.type))];
+            types.forEach(type => {
+                const label = document.createElement('label');
+                label.className = 'type-checkbox';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = type;
+                checkbox.checked = true;
+                checkbox.addEventListener('change', updateTimeline);
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(type));
+                typeFilters.appendChild(label);
+            });
+        }
+
+        function updateTimeline() {
+            const checkedTypes = Array.from(document.querySelectorAll('#type-filters input:checked'))
+                .map(checkbox => checkbox.value);
+            const filteredData = data.filter(person => checkedTypes.includes(person.type));
+            createTimeline(filteredData);
+        }
+
+        checkAllButton.addEventListener('click', () => {
+            document.querySelectorAll('#type-filters input').forEach(checkbox => checkbox.checked = true);
+            updateTimeline();
+        });
+
+        uncheckAllButton.addEventListener('click', () => {
+            document.querySelectorAll('#type-filters input').forEach(checkbox => checkbox.checked = false);
+            updateTimeline();
+        });
+
+        fetchData();
+    </script>
 </body>
 </html>
