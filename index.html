@@ -7,9 +7,16 @@
     <title>Timeline of Iranian Figures</title>
     <style>
         body {
-            font-family: Helvetica, sans-serif;
+            font-family: 'Roboto', Helvetica, sans-serif;
             margin: 0;
             padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+            color: #2c3e50;
         }
         #timeline-container {
             position: relative;
@@ -17,6 +24,9 @@
             height: 800px;
             overflow-x: auto;
             overflow-y: scroll;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         #timeline {
             position: relative;
@@ -26,72 +36,94 @@
         .person-rect {
             position: absolute;
             height: 30px;
-            border-radius: 5px;
+            border-radius: 15px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .person-rect:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .person-name {
             position: absolute;
             color: white;
             font-weight: 700;
-	          text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
             font-size: 14px;
             pointer-events: none;
             text-align: center;
             width: 100%;
+            top: 50%;
+            transition: all 0.3s ease;
+            transform: translateY(-50%);
         }
         #timebar {
             position: sticky;
             top: 0;
             width: 15000px;
-            height: 30px;
-            border-bottom: 3px solid;
+            height: 40px;
+            border-bottom: 3px solid #2c3e50;
             margin-bottom: 10px;
             background-color: white;
             z-index: 1000;
         }
         .year-marker {
             position: absolute;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c3e50;
         }
         #type-filters {
-            margin-top: 10px;
+            margin-top: 20px;
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
         }
         .type-checkbox {
-            margin-right: 10px;
+            margin: 5px 10px;
+            display: flex;
+            align-items: center;
+        }
+        .type-checkbox input[type="checkbox"] {
+            margin-right: 5px;
         }
         #filter-buttons {
-            margin-bottom: 20px;
+            margin: 20px 0;
             text-align: center;
         }
         #filter-buttons button {
-            margin: 10px 10px;
+            margin: 0 10px;
             padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: 25px;
             font-weight: 700;
-            background-color: #4CAF50;
+            background-color: #3498db;
             color: white;
             border: none;
             cursor: pointer;
             transition: background-color 0.3s;
         }
         #filter-buttons button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
         }
         .tooltip {
             position: absolute;
             background-color: white;
-            padding: 10px;
-            border: 3px solid;
-            border-radius: 5px;
+            padding: 15px;
+            border: 2px solid;
+            border-radius: 8px;
             font-size: 14px;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s;
             z-index: 1001;
-            width: 200px;
+            width: 220px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tooltip strong {
+            font-size: 16px;
+            margin-bottom: 5px;
+            display: block;
         }
     </style>
 </head>
@@ -165,6 +197,7 @@
                 const marker = document.createElement('div');
                 marker.className = 'year-marker';
                 marker.style.left = `${((year - minYear) / totalYears) * 100}%`;
+                marker.style.top = '30%'
                 marker.textContent = year;
                 timebar.appendChild(marker);
             }
@@ -197,7 +230,7 @@
                 name.className = 'person-name';
                 name.style.left = `${startX}%`;
                 name.style.width = `${width}%`;
-                name.style.top = `${yPosition + 5}px`;
+                name.style.top = `${yPosition + 13}px`;
                 name.textContent = person.name;
 
                 const tooltip = document.createElement('div');
