@@ -36,13 +36,14 @@
         .person-rect {
             position: absolute;
             height: 30px;
-            border-radius: 15px;
+            border-radius: 4px;
+            border: 2px solid rgba(0,0,0,0.35);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: filter 0.25s ease, box-shadow 0.25s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .person-rect:hover {
-            transform: scale(1.1);
+            filter: brightness(85%);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .person-name {
@@ -125,6 +126,7 @@
             font-size: 16px;
             margin-bottom: 5px;
             display: block;
+            font-family: 'Vazirmatn', 'Roboto', Helvetica, sans-serif;
         }
         .grid-line {
             position: absolute;
@@ -132,6 +134,14 @@
             bottom: 0;
             width: 1px;
             background: #eee;
+            pointer-events: none;
+        }
+        .minor-grid-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #f4f4f4;
             pointer-events: none;
         }
         .type-color-box {
@@ -184,6 +194,9 @@
         body.dark .grid-line {
             background: #444;
         }
+        body.dark .minor-grid-line {
+            background: #333;
+        }
     </style>
     <!-- Vazirmatn font for Persian script -->
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
@@ -216,21 +229,24 @@
         let minYear, maxYear, totalYears;
         let colorMap = {};
 
-        const OKABE_ITO = [
-            '#E69F00', // orange
-            '#56B4E9', // sky blue
-            '#009E73', // bluish green
-            '#F0E442', // yellow
-            '#0072B2', // blue
-            '#D55E00', // vermillion
-            '#CC79A7', // purple
-            '#000000'  // black
+        // Material-inspired palette with high contrast suitable for dark & light backgrounds
+        const NICE_COLORS = [
+            '#D32F2F', // Red 700
+            '#1976D2', // Blue 700
+            '#388E3C', // Green 700
+            '#7B1FA2', // Purple 700
+            '#00796B', // Teal 700
+            '#F57C00', // Orange 700
+            '#C2185B', // Pink 700
+            '#512DA8', // Deep Purple 700
+            '#455A64', // Blue Grey 700
+            '#0097A7'  // Cyan 700
         ];
 
         function generateColors(count) {
             const colors = [];
             for (let i = 0; i < count; i++) {
-                colors.push(OKABE_ITO[i % OKABE_ITO.length]);
+                colors.push(NICE_COLORS[i % NICE_COLORS.length]);
             }
             return colors;
         }
@@ -288,13 +304,23 @@
         function createTimeline(filteredData) {
             timeline.innerHTML = '';
 
-            // add vertical grid lines
-            const yearStep = 100;
-            for (let year = Math.floor(minYear / 100) * 100; year <= maxYear; year += yearStep) {
+            // major grid lines every 100 years
+            const majorStep = 100;
+            for (let year = Math.floor(minYear / 100) * 100; year <= maxYear; year += majorStep) {
                 const grid = document.createElement('div');
                 grid.className = 'grid-line';
                 grid.style.left = `${((year - minYear) / totalYears) * 100}%`;
                 timeline.appendChild(grid);
+            }
+
+            // minor grid lines every 20 years (excluding the majors)
+            const minorStep = 20;
+            for (let year = Math.floor(minYear / minorStep) * minorStep; year <= maxYear; year += minorStep) {
+                if (year % 100 === 0) continue; // skip where major already exists
+                const gridMinor = document.createElement('div');
+                gridMinor.className = 'minor-grid-line';
+                gridMinor.style.left = `${((year - minYear) / totalYears) * 100}%`;
+                timeline.appendChild(gridMinor);
             }
 
             const occupied = [];
